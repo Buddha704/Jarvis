@@ -1,138 +1,192 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#0b0d10">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+
+  <meta name="theme-color" content="#080b09">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="JARVIS">
+
   <title>JARVIS</title>
+
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <aside class="sidebar" id="sidebar">
+  <aside id="sidebar">
+
     <div class="brand">
-      <div class="brand-mark">J</div>
+      <div class="logo">J</div>
+
       <div>
-        <div class="brand-name">JARVIS</div>
-        <div class="brand-status">AI ASSISTANT</div>
+        <b>JARVIS</b>
+        <small>PERSONAL AI</small>
       </div>
     </div>
 
-    <button class="new-chat" id="newChat">
-      <span>＋</span>
-      New Chat
+    <button id="newChat" class="primary">
+      + New chat
     </button>
 
-    <div class="sidebar-title">CONVERSATIONS</div>
-    <div id="conversationList" class="conversation-list"></div>
+    <div class="label">
+      CHATS
+    </div>
 
-    <div class="sidebar-bottom">
-      <button id="clearChats" class="side-button">
-        Clear Conversations
+    <div id="chatList" class="chat-list"></div>
+
+    <div class="side-bottom">
+
+      <button id="clearChats" class="ghost">
+        Clear chats
       </button>
 
-      <div class="model-info">
-        <span class="status-dot"></span>
-        Jarvis Online
+      <div id="status" class="status">
+        <span></span>
+        Starting...
       </div>
+
     </div>
+
   </aside>
 
-  <main class="main">
 
-    <header class="topbar">
-      <button class="menu-button" id="menuButton">☰</button>
+  <main>
 
-      <div class="mobile-brand">
-        <div class="brand-mark small">J</div>
-        <span>JARVIS</span>
+    <header>
+
+      <button id="menu" class="icon">
+        ☰
+      </button>
+
+      <div class="mobile-title">
+        <div class="logo sm">J</div>
+        <b>JARVIS</b>
       </div>
 
-      <div class="topbar-right">
-        <span class="model-label">Qwen3 235B</span>
+      <div class="model">
+        Local browser AI
       </div>
+
     </header>
 
-    <section class="chat-area" id="chatArea">
+
+    <section id="chat" class="chat">
 
       <div id="welcome" class="welcome">
-        <div class="hero-logo">J</div>
 
-        <h1>How can I help?</h1>
+        <div class="big-logo">
+          J
+        </div>
+
+        <h1>
+          JARVIS
+        </h1>
 
         <p>
-          I'm Jarvis, your personal AI assistant.
+          AI running directly on your device.
         </p>
 
-        <div class="suggestions">
 
-          <button data-prompt="Explain something difficult to me in a simple way.">
-            <strong>Explain</strong>
-            <span>Break down something complicated</span>
+        <div class="cards">
+
+          <button data-prompt="Explain a difficult topic to me step by step.">
+            <b>Explain</b>
+            <span>Learn something complicated</span>
           </button>
 
-          <button data-prompt="Help me write something professional.">
-            <strong>Write</strong>
-            <span>Create or improve writing</span>
+          <button data-prompt="Help me solve this problem carefully and give me the answer.">
+            <b>Reason</b>
+            <span>Work through a problem</span>
           </button>
 
-          <button data-prompt="Help me solve a difficult problem step by step.">
-            <strong>Reason</strong>
-            <span>Work through a difficult problem</span>
-          </button>
-
-          <button data-prompt="Help me write and debug code.">
-            <strong>Code</strong>
+          <button data-prompt="Help me write high-quality code and explain the important parts.">
+            <b>Code</b>
             <span>Build and debug software</span>
           </button>
 
+          <button data-prompt="Help me make a detailed plan for a project.">
+            <b>Plan</b>
+            <span>Turn an idea into steps</span>
+          </button>
+
         </div>
+
+
+        <div id="loadPanel" class="load-panel">
+
+          <b>Start Jarvis</b>
+
+          <p id="progressText">
+            Checking your device...
+          </p>
+
+          <div class="progress">
+            <div id="progressBar"></div>
+          </div>
+
+          <button id="startAI" class="primary">
+            Start Jarvis AI
+          </button>
+
+        </div>
+
       </div>
+
 
       <div id="messages" class="messages"></div>
 
     </section>
 
-    <div class="composer-wrapper">
 
-      <div id="filePreview" class="file-preview"></div>
+    <div class="composer-wrap">
+
+      <div id="files" class="files"></div>
 
       <div class="composer">
 
-        <button id="attachButton" class="attach-button" title="Attach files">
+        <button
+          id="attach"
+          class="icon attach"
+          title="Attach files">
           +
         </button>
 
         <input
-          type="file"
           id="fileInput"
+          type="file"
           multiple
-          accept="image/*,.pdf,.txt,.md,.csv,.json,.doc,.docx"
           hidden
-        >
+          accept=".txt,.md,.csv,.json,.html,.css,.js,.py,.java,.cpp,.c,.h,.xml,.yaml,.yml,.log,image/*">
 
         <textarea
-          id="messageInput"
+          id="input"
           rows="1"
           placeholder="Message Jarvis..."
-          autocomplete="off"
-        ></textarea>
+          disabled></textarea>
 
-        <button id="sendButton" class="send-button">
+        <button
+          id="send"
+          class="send"
+          disabled>
           ↑
         </button>
 
       </div>
 
-      <div class="composer-note">
-        Jarvis can make mistakes. Verify important information.
+      <div class="hint">
+        Enter to send · Shift+Enter for a new line · AI runs on your device
       </div>
 
     </div>
 
   </main>
 
-  <script src="app.js"></script>
+
+  <script type="module" src="app.js"></script>
+
 </body>
 </html>
