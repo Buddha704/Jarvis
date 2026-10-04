@@ -1,795 +1,1211 @@
-import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+import * as webllm from
+  "https://esm.run/@mlc-ai/web-llm";
 
-const MODEL_ID = "Qwen3-4B-q4f16_1-MLC";
+
+/*
+===========================================================
+ JARVIS
+ LOCAL BROWSER AI
+ NO BACKEND
+ NO API
+ NO API KEY
+ NO SERVER
+===========================================================
+
+The model runs directly on the device using WebGPU.
+
+The first time Jarvis starts, the browser downloads the
+model files and stores them locally.
+
+After that, the browser can reuse the cached model.
+*/
+
+
+/*
+===========================================================
+ MODEL
+===========================================================
+
+This model is intentionally small enough to have a much
+better chance of running on an iPad.
+
+WebLLM supports low-resource models for devices with
+limited GPU memory.
+*/
+
+const MODEL_ID =
+  "Llama-3.2-1B-Instruct-q4f16_1-MLC";
+
+
+/*
+===========================================================
+ ELEMENTS
+===========================================================
+*/
+
+const sidebar =
+  document.getElementById("sidebar");
+
+const menu =
+  document.getElementById("menu");
+
+const chatList =
+  document.getElementById("chatList");
+
+const newChat =
+  document.getElementById("newChat");
+
+const clearChats =
+  document.getElementById("clearChats");
+
+const status =
+  document.getElementById("status");
+
+const statusDot =
+  status.querySelector("span");
+
+const input =
+  document.getElementById("input");
+
+const send =
+  document.getElementById("send");
+
+const messages =
+  document.getElementById("messages");
+
+const welcome =
+  document.getElementById("welcome");
+
+const startAI =
+  document.getElementById("startAI");
+
+const progressText =
+  document.getElementById("progressText");
+
+const progressBar =
+  document.getElementById("progressBar");
+
+const attach =
+  document.getElementById("attach");
+
+const fileInput =
+  document.getElementById("fileInput");
+
+const filesElement =
+  document.getElementById("files");
+
+
+/*
+===========================================================
+ STATE
+===========================================================
+*/
+
+let engine = null;
+
+let aiReady = false;
+
+let generating = false;
+
+let currentChat = [];
+
+let attachedFiles = [];
+
+let chats = [];
+
+let currentChatId = null;
+
+
+/*
+===========================================================
+ SYSTEM PROMPT
+===========================================================
+*/
 
 const SYSTEM_PROMPT = `
 You are JARVIS, a highly capable personal AI assistant.
 
-Your goals:
-- Give accurate and useful answers.
-- Reason carefully through difficult problems.
-- Help with programming, mathematics, writing, planning, research,
-  explanations, and everyday tasks.
-- Remember the conversation within the current chat.
-- Be clear and direct.
-- Do not pretend to have performed actions you did not perform.
-- If you are uncertain, say so.
-- Your name is JARVIS.
+Your job is to be useful, accurate, clear, and practical.
+
+When solving problems:
+- Think carefully before answering.
+- Check calculations.
+- Explain important steps.
+- Do not invent facts when you are uncertain.
+- Ask for clarification when necessary.
+
+When writing code:
+- Give complete working code when appropriate.
+- Prefer simple, reliable solutions.
+- Explain important implementation details.
+
+Keep answers reasonably concise unless the user asks
+for a detailed explanation.
+
+You are running locally on the user's device.
 `;
 
-let engine = null;
-let aiReady = false;
 
-let messages = [];
-let files = [];
+/*
+===========================================================
+ LOCAL STORAGE
+===========================================================
+*/
 
-let chats =
-    JSON.parse(localStorage.getItem("jarvis-chats") || "[]");
+function saveChats() {
 
-let currentChatId = null;
-
-const input = document.getElementById("input");
-const sendButton = document.getElementById("send");
-const messagesElement = document.getElementById("messages");
-const welcome = document.getElementById("welcome");
-
-const startButton =
-    document.getElementById("startAI");
-
-const progressText =
-    document.getElementById("progressText");
-
-const progressBar =
-    document.getElementById("progressBar");
-
-const status =
-    document.getElementById("status");
-
-const fileInput =
-    document.getElementById("fileInput");
-
-const filesElement =
-    document.getElementById("files");
-
-const chatList =
-    document.getElementById("chatList");
-
-
-// ----------------------------------------------------
-// STATUS
-// ----------------------------------------------------
-
-function setStatus(text, type = "") {
-
-    status.className = "status " + type;
-
-    status.innerHTML =
-        `<span></span>${text}`;
-}
-
-
-// ----------------------------------------------------
-// START AI
-// ----------------------------------------------------
-
-async function startJarvis() {
-
-    if (!navigator.gpu) {
-
-        progressText.textContent =
-            "WebGPU is not available in this browser.";
-
-        setStatus(
-            "WebGPU unavailable",
-            "error"
-        );
-
-        return;
-    }
-
-    startButton.disabled = true;
-
-    progressText.textContent =
-        "Preparing Jarvis...";
-
-    setStatus("Loading AI...");
-
-    try {
-
-        engine =
-            await webllm.CreateMLCEngine(
-                MODEL_ID,
-                {
-                    initProgressCallback:
-                        progress => {
-
-                            const percent =
-                                Math.round(
-                                    (progress.progress || 0) * 100
-                                );
-
-                            progressBar.style.width =
-                                percent + "%";
-
-                            progressText.textContent =
-                                progress.text ||
-                                `Loading AI: ${percent}%`;
-                        }
-                }
-            );
-
-        aiReady = true;
-
-        progressBar.style.width = "100%";
-
-        progressText.textContent =
-            "Jarvis is ready.";
-
-        setStatus(
-            "Jarvis ready",
-            "ready"
-        );
-
-        input.disabled = false;
-        sendButton.disabled = false;
-
-        startButton.textContent =
-            "Jarvis Ready";
-
-        input.focus();
-
-    } catch (error) {
-
-        console.error(error);
-
-        progressText.textContent =
-            "Jarvis could not load on this device.";
-
-        setStatus(
-            "AI failed to load",
-            "error"
-        );
-
-        startButton.disabled = false;
-    }
-}
-
-
-// ----------------------------------------------------
-// CHAT DISPLAY
-// ----------------------------------------------------
-
-function renderMessages() {
-
-    if (messages.length === 0) {
-
-        welcome.style.display =
-            "flex";
-
-        messagesElement.innerHTML =
-            "";
-
-        return;
-    }
-
-    welcome.style.display =
-        "none";
-
-    messagesElement.innerHTML =
-        "";
-
-    for (const message of messages) {
-
-        const row =
-            document.createElement("div");
-
-        row.className =
-            "message " +
-            message.role;
-
-        const avatar =
-            document.createElement("div");
-
-        avatar.className =
-            "avatar";
-
-        avatar.textContent =
-            message.role === "user"
-                ? "U"
-                : "J";
-
-        const body =
-            document.createElement("div");
-
-        body.className =
-            "message-body";
-
-        body.textContent =
-            message.content;
-
-        row.appendChild(avatar);
-        row.appendChild(body);
-
-        messagesElement.appendChild(row);
-    }
-
-    scrollChat();
-}
-
-
-function scrollChat() {
-
-    requestAnimationFrame(() => {
-
-        const chat =
-            document.getElementById("chat");
-
-        chat.scrollTop =
-            chat.scrollHeight;
-    });
-}
-
-
-// ----------------------------------------------------
-// SEND MESSAGE
-// ----------------------------------------------------
-
-async function sendMessage() {
-
-    if (!aiReady) {
-
-        alert(
-            "Start Jarvis AI first."
-        );
-
-        return;
-    }
-
-    if (sendButton.disabled)
-        return;
-
-    const text =
-        input.value.trim();
-
-    if (!text && files.length === 0)
-        return;
-
-    let userMessage =
-        text;
-
-    // Add selected file contents
-    for (const file of files) {
-
-        try {
-
-            if (
-                file.type.startsWith("text/") ||
-                /\.(txt|md|csv|json|js|css|html|py|java|cpp|c|h)$/i
-                    .test(file.name)
-            ) {
-
-                const contents =
-                    await file.text();
-
-                userMessage +=
-                    `\n\n[File: ${file.name}]\n` +
-                    contents.slice(0, 50000);
-            }
-
-            else {
-
-                userMessage +=
-                    `\n\n[Attached file: ${file.name}]`;
-            }
-
-        } catch {
-
-            userMessage +=
-                `\n\n[Could not read: ${file.name}]`;
-        }
-    }
-
-    input.value =
-        "";
-
-    input.style.height =
-        "auto";
-
-    files =
-        [];
-
-    renderFiles();
-
-    messages.push({
-        role: "user",
-        content: userMessage
-    });
-
-    renderMessages();
-
-    sendButton.disabled =
-        true;
-
-    showThinking();
-
-    try {
-
-        const response =
-            await engine.chat.completions.create({
-
-                messages: [
-                    {
-                        role: "system",
-                        content: SYSTEM_PROMPT
-                    },
-
-                    ...messages
-                ],
-
-                temperature: 0.7,
-
-                top_p: 0.9,
-
-                max_tokens: 1000,
-
-                stream: true
-            });
-
-        removeThinking();
-
-        let answer =
-            "";
-
-        const row =
-            createStreamingMessage();
-
-        for await (
-            const chunk of response
-        ) {
-
-            const piece =
-                chunk.choices?.[0]?.delta?.content ||
-                "";
-
-            answer +=
-                piece;
-
-            row.textContent =
-                answer;
-
-            scrollChat();
-        }
-
-        messages.push({
-            role: "assistant",
-            content: answer
-        });
-
-        saveCurrentChat();
-
-    } catch (error) {
-
-        console.error(error);
-
-        removeThinking();
-
-        messages.push({
-            role: "assistant",
-            content:
-                "I ran into an error while generating that response. Please try again."
-        });
-
-        renderMessages();
-
-    } finally {
-
-        sendButton.disabled =
-            false;
-
-        input.focus();
-    }
-}
-
-
-// ----------------------------------------------------
-// THINKING INDICATOR
-// ----------------------------------------------------
-
-function showThinking() {
-
-    const row =
-        document.createElement("div");
-
-    row.id =
-        "thinking";
-
-    row.className =
-        "message assistant";
-
-    row.innerHTML = `
-        <div class="avatar">J</div>
-        <div class="message-body thinking">
-            Jarvis is thinking...
-        </div>
-    `;
-
-    messagesElement.appendChild(row);
-
-    scrollChat();
-}
-
-
-function removeThinking() {
-
-    const thinking =
-        document.getElementById(
-            "thinking"
-        );
-
-    if (thinking)
-        thinking.remove();
-}
-
-
-function createStreamingMessage() {
-
-    const row =
-        document.createElement("div");
-
-    row.className =
-        "message assistant";
-
-    const avatar =
-        document.createElement("div");
-
-    avatar.className =
-        "avatar";
-
-    avatar.textContent =
-        "J";
-
-    const body =
-        document.createElement("div");
-
-    body.className =
-        "message-body";
-
-    row.appendChild(avatar);
-    row.appendChild(body);
-
-    messagesElement.appendChild(row);
-
-    return body;
-}
-
-
-// ----------------------------------------------------
-// FILES
-// ----------------------------------------------------
-
-function renderFiles() {
-
-    filesElement.innerHTML =
-        "";
-
-    files.forEach(
-        (file, index) => {
-
-            const item =
-                document.createElement("div");
-
-            item.className =
-                "file";
-
-            item.innerHTML =
-                `${escapeHTML(file.name)}
-                 <button>×</button>`;
-
-            item.querySelector(
-                "button"
-            ).onclick = () => {
-
-                files.splice(
-                    index,
-                    1
-                );
-
-                renderFiles();
-            };
-
-            filesElement.appendChild(
-                item
-            );
-        }
-    );
-}
-
-
-function escapeHTML(text) {
-
-    return text.replace(
-        /[&<>"']/g,
-        character => ({
-
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#039;"
-
-        })[character]
-    );
-}
-
-
-// ----------------------------------------------------
-// CHAT MEMORY
-// ----------------------------------------------------
-
-function saveCurrentChat() {
-
-    if (!messages.length)
-        return;
-
-    const firstUser =
-        messages.find(
-            message =>
-                message.role === "user"
-        );
-
-    if (!firstUser)
-        return;
-
-    let chat =
-        chats.find(
-            item =>
-                item.id === currentChatId
-        );
-
-    if (!chat) {
-
-        chat = {
-
-            id:
-                crypto.randomUUID(),
-
-            title:
-                firstUser.content
-                    .slice(0, 45),
-
-            messages: [],
-
-            updated:
-                Date.now()
-        };
-
-        currentChatId =
-            chat.id;
-
-        chats.unshift(chat);
-    }
-
-    chat.messages =
-        [...messages];
-
-    chat.updated =
-        Date.now();
+  try {
 
     localStorage.setItem(
-        "jarvis-chats",
-        JSON.stringify(chats)
+      "jarvis-chats",
+      JSON.stringify(chats)
     );
 
-    renderChatList();
+  } catch (error) {
+
+    console.warn(
+      "Could not save chats:",
+      error
+    );
+
+  }
+
 }
 
+
+function loadChats() {
+
+  try {
+
+    const saved =
+      localStorage.getItem("jarvis-chats");
+
+    if (saved) {
+
+      chats = JSON.parse(saved);
+
+    }
+
+  } catch (error) {
+
+    chats = [];
+
+  }
+
+}
+
+
+/*
+===========================================================
+ CHAT LIST
+===========================================================
+*/
 
 function renderChatList() {
 
-    chatList.innerHTML =
-        "";
+  chatList.innerHTML = "";
 
-    for (const chat of chats) {
+  chats.forEach(chat => {
 
-        const item =
-            document.createElement("div");
+    const button =
+      document.createElement("button");
 
-        item.className =
-            "chat-item";
+    button.className = "chat-item";
 
-        item.textContent =
-            chat.title;
+    button.textContent =
+      chat.title || "New chat";
 
-        item.onclick = () => {
+    button.onclick = () => {
 
-            currentChatId =
-                chat.id;
+      loadChat(chat.id);
 
-            messages =
-                [...chat.messages];
+      sidebar.classList.remove("open");
 
-            renderMessages();
-        };
+    };
 
-        chatList.appendChild(
-            item
-        );
-    }
+    chatList.appendChild(button);
+
+  });
+
 }
 
 
-// ----------------------------------------------------
-// NEW CHAT
-// ----------------------------------------------------
+/*
+===========================================================
+ CREATE CHAT
+===========================================================
+*/
 
-document
-    .getElementById("newChat")
-    .onclick = () => {
+function createChat() {
 
-        messages = [];
+  const id =
+    Date.now().toString();
 
-        files = [];
+  const chat = {
 
-        currentChatId =
-            null;
+    id,
 
-        renderMessages();
+    title: "New chat",
 
-        renderFiles();
+    messages: []
 
-        input.value =
-            "";
+  };
 
-        input.focus();
-    };
+  chats.unshift(chat);
 
+  currentChatId = id;
 
-// ----------------------------------------------------
-// CLEAR CHATS
-// ----------------------------------------------------
+  currentChat = [];
 
-document
-    .getElementById("clearChats")
-    .onclick = () => {
+  saveChats();
 
-        if (
-            !confirm(
-                "Clear all Jarvis conversations?"
-            )
-        )
-            return;
+  renderChatList();
 
-        chats = [];
+  messages.innerHTML = "";
 
-        localStorage.removeItem(
-            "jarvis-chats"
-        );
+  welcome.style.display = "";
 
-        messages = [];
-
-        currentChatId =
-            null;
-
-        renderMessages();
-
-        renderChatList();
-    };
+}
 
 
-// ----------------------------------------------------
-// FILE PICKER
-// ----------------------------------------------------
+/*
+===========================================================
+ LOAD CHAT
+===========================================================
+*/
 
-document
-    .getElementById("attach")
-    .onclick = () => {
+function loadChat(id) {
 
-        fileInput.click();
-    };
+  const chat =
+    chats.find(c => c.id === id);
+
+  if (!chat) return;
+
+  currentChatId = id;
+
+  currentChat =
+    chat.messages || [];
+
+  messages.innerHTML = "";
+
+  welcome.style.display =
+    currentChat.length
+      ? "none"
+      : "";
+
+  for (const message of currentChat) {
+
+    addMessageToScreen(
+      message.role,
+      message.content
+    );
+
+  }
+
+}
 
 
-fileInput.onchange =
-    event => {
+/*
+===========================================================
+ SAVE CURRENT CHAT
+===========================================================
+*/
 
-        files.push(
-            ...Array.from(
-                event.target.files
-            )
-        );
+function saveCurrentChat() {
 
-        renderFiles();
+  if (!currentChatId) {
 
-        fileInput.value =
-            "";
-    };
+    createChat();
+
+  }
+
+  const chat =
+    chats.find(
+      c => c.id === currentChatId
+    );
+
+  if (!chat) return;
+
+  chat.messages =
+    currentChat;
+
+  if (
+    currentChat.length &&
+    chat.title === "New chat"
+  ) {
+
+    const firstUserMessage =
+      currentChat.find(
+        m => m.role === "user"
+      );
+
+    if (firstUserMessage) {
+
+      chat.title =
+        firstUserMessage.content
+          .slice(0, 35)
+          .replace(/\n/g, " ");
+
+    }
+
+  }
+
+  saveChats();
+
+  renderChatList();
+
+}
 
 
-// ----------------------------------------------------
-// ENTER TO SEND
-// ----------------------------------------------------
+/*
+===========================================================
+ SCREEN MESSAGES
+===========================================================
+*/
 
-input.addEventListener(
-    "keydown",
-    event => {
+function addMessageToScreen(
+  role,
+  content
+) {
 
-        if (
-            event.key === "Enter" &&
-            !event.shiftKey
-        ) {
+  const message =
+    document.createElement("div");
 
-            event.preventDefault();
+  message.className =
+    `message ${role}`;
 
-            sendMessage();
+  const avatar =
+    document.createElement("div");
+
+  avatar.className =
+    "avatar";
+
+  avatar.textContent =
+    role === "user"
+      ? "U"
+      : "J";
+
+  const body =
+    document.createElement("div");
+
+  body.className =
+    "message-body";
+
+  body.textContent =
+    content;
+
+  message.appendChild(avatar);
+
+  message.appendChild(body);
+
+  messages.appendChild(message);
+
+  scrollToBottom();
+
+  return body;
+
+}
+
+
+/*
+===========================================================
+ THINKING MESSAGE
+===========================================================
+*/
+
+function addThinkingMessage() {
+
+  const message =
+    document.createElement("div");
+
+  message.className =
+    "message assistant";
+
+  const avatar =
+    document.createElement("div");
+
+  avatar.className =
+    "avatar";
+
+  avatar.textContent =
+    "J";
+
+  const body =
+    document.createElement("div");
+
+  body.className =
+    "message-body thinking";
+
+  body.textContent =
+    "Thinking...";
+
+  message.appendChild(avatar);
+
+  message.appendChild(body);
+
+  messages.appendChild(message);
+
+  scrollToBottom();
+
+  return body;
+
+}
+
+
+/*
+===========================================================
+ SCROLL
+===========================================================
+*/
+
+function scrollToBottom() {
+
+  const chat =
+    document.getElementById("chat");
+
+  chat.scrollTop =
+    chat.scrollHeight;
+
+}
+
+
+/*
+===========================================================
+ STATUS
+===========================================================
+*/
+
+function setStatus(
+  text,
+  ready = false
+) {
+
+  status.childNodes[1].nodeValue =
+    " " + text;
+
+  if (ready) {
+
+    statusDot.style.background =
+      "#35b95f";
+
+  } else {
+
+    statusDot.style.background =
+      "#d8a52b";
+
+  }
+
+}
+
+
+/*
+===========================================================
+ WEBGPU CHECK
+===========================================================
+*/
+
+async function checkWebGPU() {
+
+  if (!navigator.gpu) {
+
+    throw new Error(
+      "WebGPU is not available in this browser. Use a current version of Safari or another WebGPU-compatible browser."
+    );
+
+  }
+
+  const adapter =
+    await navigator.gpu.requestAdapter();
+
+  if (!adapter) {
+
+    throw new Error(
+      "Your device could not provide a WebGPU adapter."
+    );
+
+  }
+
+  return adapter;
+
+}
+
+
+/*
+===========================================================
+ START LOCAL AI
+===========================================================
+*/
+
+async function startJarvis() {
+
+  if (aiReady) return;
+
+  startAI.disabled = true;
+
+  progressText.textContent =
+    "Checking WebGPU...";
+
+  progressBar.style.width =
+    "2%";
+
+  try {
+
+    await checkWebGPU();
+
+    progressText.textContent =
+      "WebGPU is ready.";
+
+    progressBar.style.width =
+      "5%";
+
+
+    /*
+    -------------------------------------------------------
+    Create the model directly in the browser.
+
+    There is NO backend URL here.
+    -------------------------------------------------------
+    */
+
+    engine =
+      await webllm.CreateMLCEngine(
+        MODEL_ID,
+        {
+
+          initProgressCallback:
+            (report) => {
+
+              if (
+                report &&
+                typeof report.progress === "number"
+              ) {
+
+                const percent =
+                  Math.round(
+                    report.progress * 100
+                  );
+
+                progressBar.style.width =
+                  Math.max(
+                    5,
+                    Math.min(100, percent)
+                  ) + "%";
+
+              }
+
+              if (
+                report &&
+                report.text
+              ) {
+
+                progressText.textContent =
+                  report.text;
+
+              }
+
+            },
+
+          logLevel: "ERROR"
+
+        },
+
+        {
+          context_window_size: 4096
         }
-    }
-);
+
+      );
 
 
-// ----------------------------------------------------
-// TEXTAREA SIZE
-// ----------------------------------------------------
+    /*
+    -------------------------------------------------------
+    AI IS NOW LOCAL
+    -------------------------------------------------------
+    */
 
-input.addEventListener(
-    "input",
-    () => {
+    aiReady = true;
 
-        input.style.height =
-            "auto";
+    progressBar.style.width =
+      "100%";
 
-        input.style.height =
-            Math.min(
-                input.scrollHeight,
-                180
-            ) + "px";
-    }
-);
+    progressText.textContent =
+      "Jarvis is ready.";
+
+    setStatus(
+      "AI ready",
+      true
+    );
+
+    input.disabled = false;
+
+    send.disabled = false;
+
+    startAI.textContent =
+      "Jarvis is Ready";
+
+    startAI.disabled = true;
+
+    input.focus();
+
+  } catch (error) {
+
+    console.error(error);
+
+    aiReady = false;
+
+    progressBar.style.width =
+      "0%";
+
+    progressText.textContent =
+      "Could not start local AI.";
+
+    startAI.disabled = false;
+
+    setStatus(
+      "AI unavailable"
+    );
+
+    alert(
+      "Jarvis could not start the local AI.\n\n" +
+      error.message +
+      "\n\nMake sure you are using a browser with WebGPU enabled."
+    );
+
+  }
+
+}
 
 
-// ----------------------------------------------------
-// SUGGESTIONS
-// ----------------------------------------------------
+/*
+===========================================================
+ SEND MESSAGE
+===========================================================
+*/
 
-document
-    .querySelectorAll(
-        ".cards button"
-    )
-    .forEach(button => {
+async function sendMessage() {
 
-        button.onclick = () => {
+  if (!aiReady) {
 
-            input.value =
-                button.dataset.prompt;
+    await startJarvis();
 
-            input.focus();
+    if (!aiReady) return;
 
-            input.dispatchEvent(
-                new Event("input")
-            );
-        };
+  }
+
+  if (generating) return;
+
+  let text =
+    input.value.trim();
+
+  if (!text) return;
+
+
+  /*
+  -------------------------------------------------------
+  ATTACHED TEXT FILES
+  -------------------------------------------------------
+  */
+
+  if (attachedFiles.length) {
+
+    const fileText =
+      attachedFiles
+        .map(file =>
+          `\n\n[Attached file: ${file.name}]\n${file.text}`
+        )
+        .join("");
+
+    text += fileText;
+
+  }
+
+
+  /*
+  -------------------------------------------------------
+  CREATE CHAT IF NECESSARY
+  -------------------------------------------------------
+  */
+
+  if (!currentChatId) {
+
+    createChat();
+
+  }
+
+
+  welcome.style.display =
+    "none";
+
+
+  input.value = "";
+
+  input.style.height =
+    "auto";
+
+
+  currentChat.push({
+
+    role: "user",
+
+    content: text
+
+  });
+
+
+  addMessageToScreen(
+    "user",
+    text
+  );
+
+  saveCurrentChat();
+
+
+  generating = true;
+
+  send.disabled = true;
+
+  input.disabled = true;
+
+
+  const thinking =
+    addThinkingMessage();
+
+
+  try {
+
+    /*
+    -----------------------------------------------------
+    Build conversation for local model.
+    -----------------------------------------------------
+    */
+
+    const modelMessages = [
+
+      {
+        role: "system",
+        content: SYSTEM_PROMPT
+      },
+
+      ...currentChat
+
+    ];
+
+
+    /*
+    -----------------------------------------------------
+    LOCAL MODEL GENERATION
+
+    This call stays inside the browser.
+
+    No fetch().
+    No /api/chat.
+    No backend.
+    -----------------------------------------------------
+    */
+
+    const response =
+      await engine.chat.completions.create({
+
+        messages:
+          modelMessages,
+
+        temperature:
+          0.7,
+
+        top_p:
+          0.9,
+
+        max_tokens:
+          1024
+
+      });
+
+
+    const answer =
+      response?.choices?.[0]?.message?.content
+      || "I couldn't generate a response.";
+
+
+    thinking.classList.remove(
+      "thinking"
+    );
+
+    thinking.textContent =
+      answer;
+
+
+    currentChat.push({
+
+      role: "assistant",
+
+      content: answer
+
     });
 
 
-// ----------------------------------------------------
-// MOBILE MENU
-// ----------------------------------------------------
+    saveCurrentChat();
+
+    scrollToBottom();
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    thinking.classList.remove(
+      "thinking"
+    );
+
+    thinking.textContent =
+      "I couldn't complete that request.\n\n" +
+      error.message;
+
+  }
+
+
+  generating = false;
+
+  send.disabled = false;
+
+  input.disabled = false;
+
+  input.focus();
+
+}
+
+
+/*
+===========================================================
+ ENTER TO SEND
+===========================================================
+*/
+
+input.addEventListener(
+  "keydown",
+  event => {
+
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey
+    ) {
+
+      event.preventDefault();
+
+      sendMessage();
+
+    }
+
+  }
+);
+
+
+/*
+===========================================================
+ SEND BUTTON
+===========================================================
+*/
+
+send.addEventListener(
+  "click",
+  sendMessage
+);
+
+
+/*
+===========================================================
+ AUTO RESIZE TEXTAREA
+===========================================================
+*/
+
+input.addEventListener(
+  "input",
+  () => {
+
+    input.style.height =
+      "auto";
+
+    input.style.height =
+      Math.min(
+        input.scrollHeight,
+        180
+      ) + "px";
+
+  }
+);
+
+
+/*
+===========================================================
+ START BUTTON
+===========================================================
+*/
+
+startAI.addEventListener(
+  "click",
+  startJarvis
+);
+
+
+/*
+===========================================================
+ SUGGESTION BUTTONS
+===========================================================
+*/
 
 document
-    .getElementById("menu")
-    .onclick = () => {
+  .querySelectorAll(".cards button")
+  .forEach(button => {
 
-        document
-            .getElementById("sidebar")
-            .classList.toggle("open");
-    };
+    button.addEventListener(
+      "click",
+      () => {
+
+        input.value =
+          button.dataset.prompt || "";
+
+        if (aiReady) {
+
+          input.focus();
+
+        } else {
+
+          startJarvis();
+
+        }
+
+      }
+    );
+
+  });
 
 
-// ----------------------------------------------------
-// START
-// ----------------------------------------------------
+/*
+===========================================================
+ NEW CHAT
+===========================================================
+*/
 
-startButton.onclick =
-    startJarvis;
+newChat.addEventListener(
+  "click",
+  () => {
 
-renderMessages();
+    createChat();
+
+    input.value = "";
+
+    attachedFiles = [];
+
+    renderFiles();
+
+    input.focus();
+
+  }
+);
+
+
+/*
+===========================================================
+ CLEAR CHATS
+===========================================================
+*/
+
+clearChats.addEventListener(
+  "click",
+  () => {
+
+    if (
+      !confirm(
+        "Delete all Jarvis chats?"
+      )
+    ) return;
+
+    chats = [];
+
+    currentChat = [];
+
+    currentChatId = null;
+
+    saveChats();
+
+    renderChatList();
+
+    messages.innerHTML = "";
+
+    welcome.style.display = "";
+
+  }
+);
+
+
+/*
+===========================================================
+ MOBILE SIDEBAR
+===========================================================
+*/
+
+menu.addEventListener(
+  "click",
+  () => {
+
+    sidebar.classList.toggle(
+      "open"
+    );
+
+  }
+);
+
+
+/*
+===========================================================
+ FILE ATTACHMENTS
+===========================================================
+*/
+
+attach.addEventListener(
+  "click",
+  () => {
+
+    fileInput.click();
+
+  }
+);
+
+
+fileInput.addEventListener(
+  "change",
+  async () => {
+
+    const selected =
+      Array.from(
+        fileInput.files || []
+      );
+
+    for (const file of selected) {
+
+      try {
+
+        let text = "";
+
+        /*
+        ---------------------------------------------------
+        Text-based files can be read completely locally.
+        ---------------------------------------------------
+        */
+
+        if (
+          file.type.startsWith("text/") ||
+          /\.(txt|md|csv|json|html|css|js|py|java|cpp|c|h|xml|yaml|yml|log)$/i
+            .test(file.name)
+        ) {
+
+          text =
+            await file.text();
+
+        } else {
+
+          text =
+            `[${file.name} is an image or binary file. The local text model cannot directly read this file type.]`;
+
+        }
+
+        attachedFiles.push({
+
+          name:
+            file.name,
+
+          text
+
+        });
+
+      } catch (error) {
+
+        console.error(
+          "File error:",
+          error
+        );
+
+      }
+
+    }
+
+    renderFiles();
+
+    fileInput.value = "";
+
+  }
+);
+
+
+/*
+===========================================================
+ RENDER FILES
+===========================================================
+*/
+
+function renderFiles() {
+
+  filesElement.innerHTML = "";
+
+  attachedFiles.forEach(
+    (file, index) => {
+
+      const element =
+        document.createElement("div");
+
+      element.className =
+        "file";
+
+      element.textContent =
+        file.name + " ×";
+
+      element.style.cursor =
+        "pointer";
+
+      element.onclick = () => {
+
+        attachedFiles.splice(
+          index,
+          1
+        );
+
+        renderFiles();
+
+      };
+
+      filesElement.appendChild(
+        element
+      );
+
+    }
+  );
+
+}
+
+
+/*
+===========================================================
+ INITIALIZE
+===========================================================
+*/
+
+loadChats();
 
 renderChatList();
+
+setStatus(
+  "Waiting to start"
+);
+
+progressText.textContent =
+  "Press Start Jarvis AI to load the local model.";
+
+console.log(
+  "JARVIS loaded."
+);
+
+console.log(
+  "No backend configured."
+);
+
+console.log(
+  "AI will run locally through WebGPU."
+);
