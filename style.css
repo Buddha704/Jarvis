@@ -1,0 +1,75 @@
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080b10;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#f6f7f8}
+body{touch-action:none;user-select:none;-webkit-user-select:none}
+#game{position:fixed;inset:0;overflow:hidden}
+#game canvas{display:block;width:100%;height:100%;touch-action:none}
+
+.screen{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(135deg,rgba(3,6,10,.92),rgba(9,19,28,.78));z-index:50;padding:24px}
+.titleCard{width:min(620px,94vw);padding:38px;border:1px solid rgba(255,255,255,.13);border-radius:24px;background:rgba(12,17,23,.9);box-shadow:0 30px 90px rgba(0,0,0,.5);backdrop-filter:blur(18px)}
+.eyebrow{font-size:12px;letter-spacing:.22em;font-weight:800;color:#55d17a}
+.titleCard h1{font-size:clamp(42px,8vw,76px);line-height:.95;margin:12px 0 18px}
+.titleCard p{font-size:17px;line-height:1.6;color:#bac3cb;max-width:530px}
+.controlsHint{margin-top:18px;color:#87939e;font-size:12px;line-height:1.5}
+.primary,.danger,button{font:inherit;border:0;cursor:pointer}
+.primary{margin-top:18px;background:#35c96a;color:#061009;font-weight:900;padding:15px 30px;border-radius:12px;letter-spacing:.06em}
+.primary:active,.danger:active,button:active{transform:scale(.97)}
+.danger{background:#c74444;color:white;padding:13px 18px;border-radius:10px;font-weight:800}
+
+#hud{position:fixed;inset:0;pointer-events:none;z-index:10}
+.hudLeft{position:absolute;top:22px;left:22px;display:flex;gap:10px;flex-wrap:wrap;max-width:650px}
+.hudCard{min-width:128px;padding:13px 16px;border-radius:11px;background:rgba(12,18,25,.84);border:1px solid rgba(255,255,255,.1);box-shadow:0 8px 24px rgba(0,0,0,.22)}
+.hudCard span{display:block;font-size:10px;color:#96a1ab;letter-spacing:.1em;font-weight:800}
+.hudCard strong{display:block;font-size:21px;margin-top:5px}
+.hudCard.compact strong{font-size:13px}
+.hudCard.compact small{display:block;color:#a8b2bb;margin-top:3px}
+.healthCard{min-width:168px}.bar{height:8px;background:#222a31;border-radius:999px;overflow:hidden;margin-top:8px}.bar i{display:block;width:100%;height:100%;background:#3ed675}
+.missionCard{position:absolute;top:22px;right:22px;width:min(360px,36vw);padding:18px 20px;border-radius:13px;background:rgba(12,18,25,.88);border:1px solid rgba(255,255,255,.1)}
+.missionCard .label{font-size:9px;color:#7f8a94;letter-spacing:.16em;font-weight:800}.missionCard h2{font-size:19px;margin:8px 0 4px}.missionCard p{margin:0;color:#b8c1c8;font-size:13px;line-height:1.45}
+.locationLabel{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-size:11px;letter-spacing:.2em;color:rgba(255,255,255,.72);text-shadow:0 2px 10px #000}
+#message{position:absolute;left:50%;top:58%;transform:translate(-50%,-50%);padding:10px 15px;border-radius:10px;background:rgba(8,12,16,.86);font-weight:800;opacity:0;transition:opacity .2s;white-space:nowrap}
+#interactionPrompt{position:fixed;left:50%;bottom:22%;transform:translateX(-50%);z-index:12;background:rgba(8,12,16,.82);padding:9px 14px;border-radius:9px;font-size:12px;opacity:0;transition:.2s;pointer-events:none}
+#interactionPrompt.show{opacity:1}
+
+#touchControls{position:fixed;inset:0;pointer-events:none;z-index:20}
+#joystick{position:absolute;left:28px;bottom:38px;width:148px;height:148px;border:2px solid rgba(255,255,255,.3);border-radius:50%;background:rgba(12,20,25,.24);pointer-events:auto;touch-action:none}
+#joystickKnob{position:absolute;left:50%;top:50%;width:68px;height:68px;margin:-34px;border-radius:50%;background:rgba(223,238,229,.62);box-shadow:0 8px 25px rgba(0,0,0,.2);pointer-events:none}
+#lookHint{position:absolute;right:250px;bottom:28px;color:rgba(255,255,255,.3);font-size:10px;letter-spacing:.12em}
+#actionButtons{position:absolute;right:25px;bottom:25px;width:220px;display:grid;grid-template-columns:1fr 1fr;gap:9px;pointer-events:auto}
+#actionButtons button{min-height:58px;background:rgba(10,17,20,.86);border:1px solid rgba(255,255,255,.12);color:#f2f4f5;border-radius:11px;font-size:12px;font-weight:900;letter-spacing:.04em;touch-action:manipulation}
+#actionButtons button:last-child{grid-column:1/3}#customizeButton{grid-column:1/3}
+#touchControls.hidden{display:none}
+
+#vehicleHud{position:fixed;right:22px;bottom:22px;z-index:15;display:none;background:rgba(9,14,18,.88);padding:13px 16px;border-radius:11px;border:1px solid rgba(255,255,255,.1);text-align:right}
+#vehicleHud span{display:block;color:#7e8993;font-size:9px;letter-spacing:.15em}.vehicleHud strong{display:block}.vehicleHud small{color:#9ba5ad}
+
+.modal{position:fixed;inset:0;z-index:40;display:none;place-items:center;background:rgba(0,0,0,.55);padding:20px}
+.modal.show{display:grid}
+.panel{position:relative;width:min(420px,94vw);background:#111820;border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:28px;box-shadow:0 25px 80px rgba(0,0,0,.5)}
+.panel.wide{width:min(600px,94vw)}
+.panel h2{margin:6px 0 8px;font-size:28px}.panel .sub{color:#8e9aa5}
+.close{position:absolute;right:14px;top:10px;background:transparent;color:#b7c0c7;font-size:30px}
+.inventory-item,.dealer-item{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.dealer-item button{padding:8px 10px;border-radius:8px;background:#26333d;color:#fff;font-size:11px;font-weight:800;margin-left:5px}
+.cashLine{display:flex;justify-content:space-between;padding-top:18px;color:#aab4bc}
+.cashLine strong{color:#fff}
+.customGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}
+.customGrid label{display:flex;flex-direction:column;gap:7px;color:#9ca7af;font-size:12px;font-weight:800}
+.customGrid select{background:#1b252d;color:#fff;border:1px solid #36434e;padding:11px;border-radius:9px}
+#toast{position:fixed;left:50%;bottom:8%;transform:translateX(-50%);z-index:60;padding:11px 16px;background:#eaf3ee;color:#09120c;border-radius:9px;font-weight:900;opacity:0;transition:.2s;pointer-events:none}
+
+.keyboard-mode #touchControls{display:none}
+.keyboard-mode #lookHint{display:none}
+.touch-mode .desktopOnly{display:none}
+
+@media(max-width:800px){
+  .titleCard{padding:28px}.titleCard p{font-size:14px}
+  .hudLeft{top:12px;left:12px;gap:7px;max-width:58vw}.hudCard{min-width:92px;padding:9px 11px}.hudCard strong{font-size:16px}.healthCard{min-width:115px}
+  .missionCard{top:12px;right:12px;width:36vw;min-width:190px;padding:12px 14px}.missionCard h2{font-size:15px}.missionCard p{font-size:11px}
+  #joystick{left:22px;bottom:24px;width:132px;height:132px}#joystickKnob{width:62px;height:62px;margin:-31px}
+  #actionButtons{right:14px;bottom:16px;width:200px;gap:7px}#actionButtons button{min-height:53px}
+  #lookHint{right:225px;bottom:31px}
+}
+@media(max-width:560px){
+  .hudCard.compact{display:none}.missionCard{min-width:170px;width:42vw}.locationLabel{display:none}
+  #lookHint{display:none}.customGrid{grid-template-columns:1fr}
+}

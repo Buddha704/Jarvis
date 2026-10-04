@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#090d12">
+  <title>Street Empire</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div id="game"></div>
+
+  <div id="startScreen" class="screen">
+    <div class="titleCard">
+      <div class="eyebrow">STREET EMPIRE</div>
+      <h1>Build Your Empire</h1>
+      <p>Explore the city, earn cash, customize your character, drive, complete jobs and survive the heat.</p>
+      <button id="playButton" class="primary">PLAY</button>
+      <div class="controlsHint">Touch: left joystick to move • right side to look</div>
+      <div class="controlsHint desktopOnly">Keyboard: WASD • Mouse look • E vehicle • F attack • Space jump • V camera • I inventory</div>
+    </div>
+  </div>
+
+  <div id="hud">
+    <div class="hudLeft">
+      <div class="hudCard">
+        <span>CASH</span>
+        <strong id="cash">$500</strong>
+      </div>
+      <div class="hudCard healthCard">
+        <span>HEALTH</span>
+        <div class="bar"><i id="healthFill"></i></div>
+      </div>
+      <div class="hudCard">
+        <span>WANTED</span>
+        <strong id="wanted">☆☆☆☆☆</strong>
+      </div>
+      <div class="hudCard compact">
+        <span>WEAPON</span>
+        <strong id="weaponHud">GLOCK 22</strong>
+        <small id="ammoHud">15 / 45</small>
+      </div>
+    </div>
+
+    <div id="missionCard" class="missionCard">
+      <span class="label">CURRENT OBJECTIVE</span>
+      <h2 id="missionTitle">First Run</h2>
+      <p id="missionText">Buy one package from the dealer.</p>
+    </div>
+
+    <div id="locationLabel" class="locationLabel">DOWNTOWN</div>
+    <div id="message"></div>
+
+    <div id="touchControls">
+      <div id="joystick" aria-label="movement joystick">
+        <div id="joystickKnob"></div>
+      </div>
+      <div id="lookHint">DRAG TO LOOK</div>
+      <div id="actionButtons">
+        <button id="jumpButton">JUMP</button>
+        <button id="attackButton">ATTACK</button>
+        <button id="enterButton">ENTER</button>
+        <button id="cameraButton">CAMERA</button>
+        <button id="inventoryButton">BAG</button>
+        <button id="interactButton">INTERACT</button>
+        <button id="customizeButton">OUTFIT</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="vehicleHud">
+    <span>VEHICLE</span>
+    <strong id="vehicleSpeed">0 MPH</strong>
+    <small>ENTER to exit</small>
+  </div>
+
+  <div id="interactionPrompt"></div>
+
+  <div id="inventory" class="modal">
+    <div class="panel">
+      <button id="closeInventory" class="close">×</button>
+      <div class="eyebrow">INVENTORY</div>
+      <h2>Bag</h2>
+      <div id="inventoryItems"></div>
+      <div class="cashLine">Cash <strong id="inventoryCash">$500</strong></div>
+    </div>
+  </div>
+
+  <div id="dealer" class="modal">
+    <div class="panel wide">
+      <button id="closeDealer" class="close">×</button>
+      <div class="eyebrow">MARKET</div>
+      <h2>Dealer</h2>
+      <p class="sub">Buy and sell contraband for the current mission.</p>
+      <div id="dealerItems"></div>
+    </div>
+  </div>
+
+  <div id="customizer" class="modal">
+    <div class="panel wide">
+      <button id="closeCustomizer" class="close">×</button>
+      <div class="eyebrow">CHARACTER</div>
+      <h2>Customize</h2>
+      <div class="customGrid">
+        <label>Shirt
+          <select id="shirtSelect">
+            <option value="0x111318">Black</option>
+            <option value="0x1e4d8f">Blue</option>
+            <option value="0x8e2525">Red</option>
+            <option value="0x2f7d4b">Green</option>
+            <option value="0x6d3c91">Purple</option>
+            <option value="0xb58a2a">Gold</option>
+          </select>
+        </label>
+        <label>Pants
+          <select id="pantsSelect">
+            <option value="0x17191d">Black</option>
+            <option value="0x273b5b">Dark Blue</option>
+            <option value="0x5b4633">Brown</option>
+            <option value="0x777b80">Gray</option>
+          </select>
+        </label>
+      </div>
+      <button id="saveCustomizer" class="primary">SAVE OUTFIT</button>
+    </div>
+  </div>
+
+  <div id="robberyPanel" class="modal">
+    <div class="panel">
+      <button id="closeRobbery" class="close">×</button>
+      <div class="eyebrow">JOB</div>
+      <h2 id="robberyTitle">Robbery</h2>
+      <p id="robberyText"></p>
+      <div class="robberyActions">
+        <button id="startRobbery" class="danger">START JOB</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <script type="module" src="./game.js"></script>
+</body>
+</html>
