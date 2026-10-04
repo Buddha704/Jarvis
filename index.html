@@ -1,1149 +1,138 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>City Life</title>
-
-<style>
-* {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-}
-
-html, body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: #111;
-    font-family: Arial, sans-serif;
-    touch-action: none;
-}
-
-canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-}
-
-#game {
-    position: fixed;
-    inset: 0;
-}
-
-#hud {
-    position: fixed;
-    top: env(safe-area-inset-top, 10px);
-    left: 0;
-    right: 0;
-    z-index: 20;
-    pointer-events: none;
-}
-
-.topbar {
-    display: flex;
-    justify-content: space-between;
-    padding: 12px;
-}
-
-.panel {
-    background: rgba(0,0,0,.72);
-    color: white;
-    border: 1px solid rgba(255,255,255,.16);
-    border-radius: 12px;
-    padding: 9px 12px;
-    backdrop-filter: blur(5px);
-}
-
-#stats {
-    font-size: 14px;
-    line-height: 1.45;
-}
-
-#wanted {
-    color: #fff;
-    letter-spacing: 2px;
-}
-
-#mission {
-    position: fixed;
-    top: 88px;
-    left: 50%;
-    transform: translateX(-50%);
-    min-width: 230px;
-    max-width: 80vw;
-    text-align: center;
-    font-size: 14px;
-    z-index: 21;
-    display: none;
-}
-
-#crosshair {
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    width: 10px;
-    height: 10px;
-    transform: translate(-50%,-50%);
-    border: 1px solid rgba(255,255,255,.9);
-    border-radius: 50%;
-    z-index: 15;
-    pointer-events: none;
-}
-
-#message {
-    position: fixed;
-    bottom: 145px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: white;
-    background: rgba(0,0,0,.72);
-    padding: 10px 16px;
-    border-radius: 10px;
-    z-index: 30;
-    display: none;
-    text-align: center;
-    max-width: 85vw;
-}
-
-#controls {
-    position: fixed;
-    inset: 0;
-    z-index: 25;
-    pointer-events: none;
-}
-
-#joystick {
-    position: absolute;
-    left: 24px;
-    bottom: calc(25px + env(safe-area-inset-bottom));
-    width: 130px;
-    height: 130px;
-    border-radius: 50%;
-    background: rgba(255,255,255,.08);
-    border: 2px solid rgba(255,255,255,.2);
-    pointer-events: auto;
-}
-
-#stick {
-    position: absolute;
-    width: 58px;
-    height: 58px;
-    left: 34px;
-    top: 34px;
-    border-radius: 50%;
-    background: rgba(255,255,255,.3);
-    border: 1px solid rgba(255,255,255,.45);
-}
-
-.action {
-    position: absolute;
-    width: 62px;
-    height: 62px;
-    border-radius: 50%;
-    border: 1px solid rgba(255,255,255,.3);
-    background: rgba(0,0,0,.5);
-    color: white;
-    font-weight: bold;
-    pointer-events: auto;
-}
-
-#jump {
-    right: 28px;
-    bottom: calc(28px + env(safe-area-inset-bottom));
-}
-
-#action {
-    right: 102px;
-    bottom: calc(78px + env(safe-area-inset-bottom));
-}
-
-#enter {
-    right: 30px;
-    bottom: calc(103px + env(safe-area-inset-bottom));
-}
-
-#shoot {
-    right: 105px;
-    bottom: calc(153px + env(safe-area-inset-bottom));
-}
-
-#customize {
-    position: fixed;
-    right: 12px;
-    top: 92px;
-    z-index: 31;
-    pointer-events: auto;
-    background: rgba(0,0,0,.7);
-    color: white;
-    border: 1px solid rgba(255,255,255,.2);
-    border-radius: 8px;
-    padding: 9px;
-}
-
-#menu {
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%,-50%);
-    z-index: 50;
-    width: min(420px,90vw);
-    background: rgba(10,10,10,.95);
-    color: white;
-    padding: 20px;
-    border-radius: 16px;
-    border: 1px solid rgba(255,255,255,.2);
-    display: none;
-}
-
-#menu h2 {
-    margin-top: 0;
-}
-
-button {
-    cursor: pointer;
-}
-
-.menuButton {
-    width: 100%;
-    padding: 12px;
-    margin: 5px 0;
-    border: 0;
-    border-radius: 9px;
-    background: #238636;
-    color: white;
-    font-weight: bold;
-}
-
-#fps {
-    font-size: 11px;
-    opacity: .7;
-}
-
-@media (hover:hover) and (pointer:fine) {
-    #joystick,
-    #jump,
-    #action,
-    #enter,
-    #shoot {
-        display: none;
-    }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0d10">
+  <title>JARVIS</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div id="game"></div>
-
-<div id="hud">
-    <div class="topbar">
-        <div class="panel" id="stats">
-            $<span id="money">500</span><br>
-            Health: <span id="health">100</span><br>
-            <span id="wanted">Wanted: ☆☆☆☆☆</span>
-        </div>
-
-        <div class="panel">
-            <div id="fps">FPS: --</div>
-        </div>
-    </div>
-</div>
-
-<div id="mission" class="panel"></div>
-
-<div id="crosshair"></div>
-
-<div id="message"></div>
-
-<div id="controls">
-
-    <div id="joystick">
-        <div id="stick"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">J</div>
+      <div>
+        <div class="brand-name">JARVIS</div>
+        <div class="brand-status">AI ASSISTANT</div>
+      </div>
     </div>
 
-    <button class="action" id="jump">JUMP</button>
-    <button class="action" id="action">ACT</button>
-    <button class="action" id="enter">CAR</button>
-    <button class="action" id="shoot">USE</button>
+    <button class="new-chat" id="newChat">
+      <span>＋</span>
+      New Chat
+    </button>
 
-</div>
+    <div class="sidebar-title">CONVERSATIONS</div>
+    <div id="conversationList" class="conversation-list"></div>
 
-<button id="customize">CHARACTER</button>
+    <div class="sidebar-bottom">
+      <button id="clearChats" class="side-button">
+        Clear Conversations
+      </button>
 
-<div id="menu">
-    <h2>Character</h2>
+      <div class="model-info">
+        <span class="status-dot"></span>
+        Jarvis Online
+      </div>
+    </div>
+  </aside>
 
-    <button class="menuButton" onclick="changeCharacter(0)">Blue Outfit</button>
-    <button class="menuButton" onclick="changeCharacter(1)">Red Outfit</button>
-    <button class="menuButton" onclick="changeCharacter(2)">Green Outfit</button>
-    <button class="menuButton" onclick="changeCharacter(3)">Black Outfit</button>
+  <main class="main">
 
-    <button class="menuButton" onclick="closeMenu()">Close</button>
-</div>
+    <header class="topbar">
+      <button class="menu-button" id="menuButton">☰</button>
 
-<script type="module">
+      <div class="mobile-brand">
+        <div class="brand-mark small">J</div>
+        <span>JARVIS</span>
+      </div>
 
-import * as THREE from
-"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+      <div class="topbar-right">
+        <span class="model-label">Qwen3 235B</span>
+      </div>
+    </header>
 
-/* =========================================================
-   BASIC SETUP
-========================================================= */
+    <section class="chat-area" id="chatArea">
 
-const container = document.getElementById("game");
+      <div id="welcome" class="welcome">
+        <div class="hero-logo">J</div>
 
-const scene = new THREE.Scene();
+        <h1>How can I help?</h1>
 
-scene.background = new THREE.Color(0x8bb7df);
+        <p>
+          I'm Jarvis, your personal AI assistant.
+        </p>
 
-scene.fog = new THREE.Fog(
-    0x8bb7df,
-    100,
-    420
-);
+        <div class="suggestions">
 
-const camera = new THREE.PerspectiveCamera(
-    65,
-    innerWidth / innerHeight,
-    .1,
-    700
-);
+          <button data-prompt="Explain something difficult to me in a simple way.">
+            <strong>Explain</strong>
+            <span>Break down something complicated</span>
+          </button>
 
-const renderer = new THREE.WebGLRenderer({
-    antialias: false,
-    powerPreference: "high-performance",
-    logarithmicDepthBuffer: false
-});
+          <button data-prompt="Help me write something professional.">
+            <strong>Write</strong>
+            <span>Create or improve writing</span>
+          </button>
 
-renderer.setPixelRatio(
-    Math.min(window.devicePixelRatio || 1, 1.5)
-);
+          <button data-prompt="Help me solve a difficult problem step by step.">
+            <strong>Reason</strong>
+            <span>Work through a difficult problem</span>
+          </button>
 
-renderer.setSize(
-    innerWidth,
-    innerHeight
-);
+          <button data-prompt="Help me write and debug code.">
+            <strong>Code</strong>
+            <span>Build and debug software</span>
+          </button>
 
-renderer.shadowMap.enabled = false;
+        </div>
+      </div>
 
-renderer.outputColorSpace = THREE.SRGBColorSpace;
+      <div id="messages" class="messages"></div>
 
-container.appendChild(renderer.domElement);
+    </section>
 
+    <div class="composer-wrapper">
 
-/* =========================================================
-   PERFORMANCE
-========================================================= */
+      <div id="filePreview" class="file-preview"></div>
 
-let quality = 1;
+      <div class="composer">
 
-const isTouch =
-    "ontouchstart" in window ||
-    navigator.maxTouchPoints > 0;
+        <button id="attachButton" class="attach-button" title="Attach files">
+          +
+        </button>
 
-if (isTouch) {
-    renderer.setPixelRatio(
-        Math.min(window.devicePixelRatio || 1, 1.25)
-    );
-}
+        <input
+          type="file"
+          id="fileInput"
+          multiple
+          accept="image/*,.pdf,.txt,.md,.csv,.json,.doc,.docx"
+          hidden
+        >
 
-let fpsTimer = 0;
-let fpsFrames = 0;
-let currentFPS = 60;
+        <textarea
+          id="messageInput"
+          rows="1"
+          placeholder="Message Jarvis..."
+          autocomplete="off"
+        ></textarea>
 
-function performanceMonitor(dt) {
+        <button id="sendButton" class="send-button">
+          ↑
+        </button>
 
-    fpsTimer += dt;
-    fpsFrames++;
+      </div>
 
-    if (fpsTimer >= 1) {
+      <div class="composer-note">
+        Jarvis can make mistakes. Verify important information.
+      </div>
 
-        currentFPS = fpsFrames / fpsTimer;
+    </div>
 
-        document.getElementById("fps").textContent =
-            "FPS: " + Math.round(currentFPS);
+  </main>
 
-        if (currentFPS < 48 && quality > .75) {
-
-            quality -= .1;
-
-            renderer.setPixelRatio(
-                Math.min(
-                    window.devicePixelRatio || 1,
-                    quality
-                )
-            );
-        }
-
-        if (currentFPS > 58 && quality < 1.25) {
-
-            quality += .05;
-
-            renderer.setPixelRatio(
-                Math.min(
-                    window.devicePixelRatio || 1,
-                    quality
-                )
-            );
-        }
-
-        fpsTimer = 0;
-        fpsFrames = 0;
-    }
-}
-
-
-/* =========================================================
-   LIGHTING
-========================================================= */
-
-const ambient = new THREE.HemisphereLight(
-    0xffffff,
-    0x344050,
-    2
-);
-
-scene.add(ambient);
-
-const sun = new THREE.DirectionalLight(
-    0xffffff,
-    2.2
-);
-
-sun.position.set(
-    100,
-    180,
-    80
-);
-
-scene.add(sun);
-
-
-/* =========================================================
-   WORLD
-========================================================= */
-
-const WORLD_SIZE = 500;
-
-const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(
-        WORLD_SIZE,
-        WORLD_SIZE
-    ),
-    new THREE.MeshLambertMaterial({
-        color: 0x3f713b
-    })
-);
-
-ground.rotation.x = -Math.PI / 2;
-
-scene.add(ground);
-
-
-/* =========================================================
-   COLLISION OBJECTS
-========================================================= */
-
-const buildings = [];
-const cars = [];
-const pedestrians = [];
-const policeCars = [];
-
-
-/* =========================================================
-   MATERIAL HELPERS
-========================================================= */
-
-function mat(color) {
-
-    return new THREE.MeshLambertMaterial({
-        color
-    });
-
-}
-
-const roadMat = mat(0x292929);
-const sidewalkMat = mat(0x8b8b8b);
-const buildingMats = [
-    mat(0x767676),
-    mat(0x9a7f69),
-    mat(0x68758a),
-    mat(0x927f65),
-    mat(0x626262),
-    mat(0x806e83)
-];
-
-const windowMat = mat(0x6ab3d9);
-
-const whiteMat = mat(0xffffff);
-
-const yellowMat = mat(0xffd52e);
-
-
-/* =========================================================
-   ROADS
-========================================================= */
-
-function createRoad(x,z,w,d) {
-
-    const road = new THREE.Mesh(
-        new THREE.BoxGeometry(w,.05,d),
-        roadMat
-    );
-
-    road.position.set(
-        x,
-        .025,
-        z
-    );
-
-    scene.add(road);
-
-}
-
-for (let x = -220; x <= 220; x += 80) {
-    createRoad(x,0,18,500);
-}
-
-for (let z = -220; z <= 220; z += 80) {
-    createRoad(0,z,500,18);
-}
-
-
-/* =========================================================
-   SIDEWALKS
-========================================================= */
-
-function createSidewalk(x,z,w,d) {
-
-    const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(w,.12,d),
-        sidewalkMat
-    );
-
-    mesh.position.set(
-        x,
-        .06,
-        z
-    );
-
-    scene.add(mesh);
-
-}
-
-for (let x=-220;x<=220;x+=80) {
-
-    createSidewalk(x+13,0,8,500);
-    createSidewalk(x-13,0,8,500);
-
-}
-
-for (let z=-220;z<=220;z+=80) {
-
-    createSidewalk(0,z+13,500,8);
-    createSidewalk(0,z-13,500,8);
-
-}
-
-
-/* =========================================================
-   CROSSWALKS
-========================================================= */
-
-function createCrosswalk(x,z,vertical) {
-
-    for(let i=-4;i<=4;i++) {
-
-        const stripe = new THREE.Mesh(
-            new THREE.BoxGeometry(
-                vertical ? 2 : 8,
-                .03,
-                vertical ? 8 : 2
-            ),
-            whiteMat
-        );
-
-        if(vertical) {
-            stripe.position.set(
-                x,
-                .085,
-                z+i*2.2
-            );
-        } else {
-            stripe.position.set(
-                x+i*2.2,
-                .085,
-                z
-            );
-        }
-
-        scene.add(stripe);
-    }
-}
-
-for(let x=-160;x<=160;x+=80) {
-
-    createCrosswalk(x,9,true);
-    createCrosswalk(x,-9,true);
-
-}
-
-for(let z=-160;z<=160;z+=80) {
-
-    createCrosswalk(9,z,false);
-    createCrosswalk(-9,z,false);
-
-}
-
-
-/* =========================================================
-   BUILDINGS
-========================================================= */
-
-function createBuilding(x,z,w,d,h) {
-
-    const group = new THREE.Group();
-
-    const body = new THREE.Mesh(
-        new THREE.BoxGeometry(w,h,d),
-        buildingMats[
-            Math.floor(Math.random()*buildingMats.length)
-        ]
-    );
-
-    body.position.y = h/2;
-
-    group.add(body);
-
-    /*
-       WINDOWS ARE CREATED AS PART OF THE BUILDING GROUP.
-       Their positions are calculated directly against the
-       building surfaces, so they remain attached.
-    */
-
-    const rows = Math.max(2,Math.floor(h/4));
-
-    const colsFront = Math.max(
-        2,
-        Math.floor(w/4)
-    );
-
-    const colsSide = Math.max(
-        2,
-        Math.floor(d/4)
-    );
-
-    for(let row=0;row<rows;row++) {
-
-        const y = 2.2 + row*3.5;
-
-        if(y > h-1) continue;
-
-        for(let col=0;col<colsFront;col++) {
-
-            const xPos =
-                -w/2 +
-                2 +
-                col*((w-4)/(colsFront-1));
-
-            addWindow(
-                group,
-                xPos,
-                y,
-                d/2 + .012,
-                false
-            );
-
-            addWindow(
-                group,
-                xPos,
-                y,
-                -d/2 - .012,
-                false
-            );
-        }
-
-        for(let col=0;col<colsSide;col++) {
-
-            const zPos =
-                -d/2 +
-                2 +
-                col*((d-4)/(colsSide-1));
-
-            addWindow(
-                group,
-                w/2 + .012,
-                y,
-                zPos,
-                true
-            );
-
-            addWindow(
-                group,
-                -w/2 - .012,
-                y,
-                zPos,
-                true
-            );
-        }
-    }
-
-    group.position.set(x,0,z);
-
-    scene.add(group);
-
-    buildings.push({
-        x,
-        z,
-        w,
-        d,
-        h
-    });
-}
-
-
-function addWindow(parent,x,y,z,side) {
-
-    const width = side ? .035 : 1.35;
-    const depth = side ? 1.35 : .035;
-
-    const window = new THREE.Mesh(
-        new THREE.BoxGeometry(
-            width,
-            1.2,
-            depth
-        ),
-        windowMat
-    );
-
-    window.position.set(
-        x,
-        y,
-        z
-    );
-
-    parent.add(window);
-}
-
-
-/* BUILDING GRID */
-
-const buildingSpots = [];
-
-for(let bx=-200;bx<=200;bx+=80) {
-
-    for(let bz=-200;bz<=200;bz+=80) {
-
-        /*
-           Each road intersection leaves space.
-        */
-
-        const positions = [
-            [bx+25,bz+25],
-            [bx-25,bz+25],
-            [bx+25,bz-25],
-            [bx-25,bz-25]
-        ];
-
-        positions.forEach(p => {
-
-            const w =
-                18 + Math.random()*12;
-
-            const d =
-                18 + Math.random()*12;
-
-            const h =
-                15 + Math.random()*35;
-
-            createBuilding(
-                p[0],
-                p[1],
-                w,
-                d,
-                h
-            );
-
-        });
-    }
-}
-
-
-/* =========================================================
-   STREET LIGHTS
-========================================================= */
-
-function createStreetLight(x,z) {
-
-    const pole = new THREE.Mesh(
-        new THREE.CylinderGeometry(
-            .12,.16,5
-        ),
-        mat(0x333333)
-    );
-
-    pole.position.set(x,2.5,z);
-
-    scene.add(pole);
-
-    const lamp = new THREE.Mesh(
-        new THREE.SphereGeometry(.35,8,8),
-        yellowMat
-    );
-
-    lamp.position.set(
-        x,
-        5.05,
-        z
-    );
-
-    scene.add(lamp);
-}
-
-for(let x=-200;x<=200;x+=80) {
-
-    for(let z=-200;z<=200;z+=80) {
-
-        createStreetLight(
-            x+10,
-            z+10
-        );
-
-    }
-}
-
-
-/* =========================================================
-   PLAYER
-========================================================= */
-
-const player = new THREE.Group();
-
-const playerBody = new THREE.Mesh(
-    new THREE.CapsuleGeometry(
-        .55,
-        1.3,
-        4,
-        8
-    ),
-    mat(0x2364d2)
-);
-
-playerBody.position.y = 1.2;
-
-player.add(playerBody);
-
-const head = new THREE.Mesh(
-    new THREE.SphereGeometry(
-        .43,
-        10,
-        8
-    ),
-    mat(0xc99172)
-);
-
-head.position.y = 2.25;
-
-player.add(head);
-
-scene.add(player);
-
-player.position.set(
-    0,
-    0,
-    30
-);
-
-
-/* =========================================================
-   CHARACTER COLORS
-========================================================= */
-
-const characterColors = [
-    0x2364d2,
-    0xb92828,
-    0x269044,
-    0x171717
-];
-
-window.changeCharacter = function(i) {
-
-    playerBody.material.color.setHex(
-        characterColors[i]
-    );
-
-    closeMenu();
-
-};
-
-window.closeMenu = function() {
-
-    document.getElementById("menu").style.display =
-        "none";
-
-};
-
-document.getElementById("customize")
-    .addEventListener("click",() => {
-
-        document.getElementById("menu").style.display =
-            "block";
-
-    });
-
-
-/* =========================================================
-   MOVEMENT
-========================================================= */
-
-const keys = {};
-
-window.addEventListener("keydown",e => {
-
-    keys[e.key.toLowerCase()] = true;
-
-});
-
-window.addEventListener("keyup",e => {
-
-    keys[e.key.toLowerCase()] = false;
-
-});
-
-let joystickX = 0;
-let joystickY = 0;
-
-const joystick =
-    document.getElementById("joystick");
-
-const stick =
-    document.getElementById("stick");
-
-let joystickPointer = null;
-
-joystick.addEventListener(
-    "pointerdown",
-    e => {
-
-        joystickPointer = e.pointerId;
-
-        joystick.setPointerCapture(
-            e.pointerId
-        );
-
-        updateJoystick(e);
-
-    }
-);
-
-joystick.addEventListener(
-    "pointermove",
-    e => {
-
-        if(
-            joystickPointer === e.pointerId
-        ) {
-            updateJoystick(e);
-        }
-
-    }
-);
-
-joystick.addEventListener(
-    "pointerup",
-    resetJoystick
-);
-
-joystick.addEventListener(
-    "pointercancel",
-    resetJoystick
-);
-
-function updateJoystick(e) {
-
-    const r =
-        joystick.getBoundingClientRect();
-
-    let x =
-        e.clientX -
-        (r.left+r.width/2);
-
-    let y =
-        e.clientY -
-        (r.top+r.height/2);
-
-    const max = 45;
-
-    const length =
-        Math.sqrt(x*x+y*y);
-
-    if(length > max) {
-
-        x =
-            x/length*max;
-
-        y =
-            y/length*max;
-
-    }
-
-    joystickX =
-        x/max;
-
-    joystickY =
-        y/max;
-
-    stick.style.transform =
-        `translate(${x}px,${y}px)`;
-}
-
-function resetJoystick() {
-
-    joystickPointer = null;
-
-    joystickX = 0;
-    joystickY = 0;
-
-    stick.style.transform =
-        "translate(0,0)";
-}
-
-
-/* =========================================================
-   CAMERA
-========================================================= */
-
-let yaw = 0;
-let pitch = .25;
-
-let cameraDistance = 7;
-
-let mouseLocked = false;
-
-renderer.domElement.addEventListener(
-    "click",
-    () => {
-
-        if(!isTouch) {
-
-            renderer.domElement.requestPointerLock?.();
-
-        }
-
-    }
-);
-
-document.addEventListener(
-    "pointerlockchange",
-    () => {
-
-        mouseLocked =
-            document.pointerLockElement ===
-            renderer.domElement;
-
-    }
-);
-
-window.addEventListener(
-    "mousemove",
-    e => {
-
-        if(mouseLocked) {
-
-            yaw -= e.movementX * .0025;
-
-            pitch -= e.movementY * .0025;
-
-            pitch =
-                THREE.MathUtils.clamp(
-                    pitch,
-                    -0.15,
-                    1.0
-                );
-        }
-
-    }
-);
-
-
-/* TOUCH CAMERA */
-
-let cameraTouch = null;
-let lastTouchX = 0;
-let lastTouchY = 0;
-
-renderer.domElement.addEventListener(
-    "pointerdown",
-    e => {
-
-        if(
-            e.pointerType === "touch" &&
-            e.clientX > innerWidth*.35
-        ) {
-
-            cameraTouch = e.pointerId;
-
-            lastTouchX = e.clientX;
-            lastTouchY = e.clientY;
-
-            renderer.domElement.setPointerCapture(
-                e.pointerId
-            );
-        }
-
-    }
-);
-
-renderer.domElement.addEventListener(
-    "pointermove",
-    e => {
-
-        if(
-            e.pointerType === "touch" &&
-            e.pointerId === cameraTouch
-        ) {
-
-            const dx =
-                e.clientX-lastTouchX;
-
-            const dy =
-                e.clientY-lastTouchY;
-
-            yaw -= dx*.006;
-
-            pitch -= dy*.006;
-
-            pitch =
-                THREE.MathUtils.clamp(
-                    pitch,
-                    -0.15,
-                    1
-                );
-
-            lastTouchX=e.clientX;
-            lastTouchY=e.clientY;
-
-        }
-
-    }
-);
-
-renderer.domElement.addEventListener(
-    "pointerup",
-    e => {
-
-        if(e.pointerId===cameraTouch)
-            cameraTouch=null;
-
-    }
-);
-
-
-/* =========================================================
-   COLLISION
-========================================================= */
-
-function collides
+  <script src="app.js"></script>
+</body>
+</html>
